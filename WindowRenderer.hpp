@@ -34,5 +34,8 @@ public:
 	void swap_rectangle_positions(const int& idx1, const int& idx2) noexcept;
 	void draw_rectangles() noexcept;
 
+
+	void TEST_RECTANGLE_SWAPS();
+
 };
 

@@ -26,6 +26,16 @@ void WindowRenderer::draw_rectangles() noexcept
 	}
 }
 
+void WindowRenderer::TEST_RECTANGLE_SWAPS()
+{
+	// Generate 2 random indecies to swap between
+	// No need for fancy-shmancy std::uniform_int_distribution or std::mt19937
+	int idx1 = rand() % (rectangle_array.size());
+	int idx2 = rand() % (rectangle_array.size());
+
+	swap_rectangle_positions(idx1, idx2);
+}
+
 void WindowRenderer::start(const std::vector<int>& list) noexcept
 {	
 	// Generate the rectangles
@@ -46,6 +56,8 @@ void WindowRenderer::start(const std::vector<int>& list) noexcept
 		draw_rectangles();
 		display();
 		clear();
+
+		TEST_RECTANGLE_SWAPS();
 	}
 }
 
@@ -107,7 +119,10 @@ void WindowRenderer::swap_rectangle_positions(const int& idx1, const int& idx2) 
 	if (idx1 == idx2)
 		return;
 
-	const int diff = idx2 - idx1;
-	rectangle_array[idx1].move(diff * rect_data.size.x, 0);
-	rectangle_array[idx2].move(-diff * rect_data.size.x, 0);
+	// Determine their x positions, and swap them accordingly
+	const float x_1 = rectangle_array[idx1].getPosition().x;
+	const float x_2 = rectangle_array[idx2].getPosition().x;
+	// Move rectangles forward by the differences in x positions
+	rectangle_array[idx1].move((x_2 - x_1), 0);
+	rectangle_array[idx2].move((x_1 - x_2), 0);
 }

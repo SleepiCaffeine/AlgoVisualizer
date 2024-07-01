@@ -2,11 +2,11 @@
 
 
 
-WindowRenderer::WindowRenderer(const sf::VideoMode video_mode, const sf::String& title)
-	: window{ video_mode, title }, rect_data { sf::Vector2f(0,0), -1 }
+WindowRenderer::WindowRenderer(const sf::VideoMode video_mode, const sf::String& title, const unsigned int& delay_in_ms)
+	: window{ video_mode, title }, rect_data{ sf::Vector2f(0,0), -1 }, delay_in_ms{delay_in_ms}
 { 
 	window.setActive();
-	window.setVerticalSyncEnabled(true);
+	window.setFramerateLimit(1000 / delay_in_ms);
 }
 
 void WindowRenderer::display() noexcept
@@ -27,24 +27,43 @@ void WindowRenderer::draw_rectangles() noexcept
 }
 
 void WindowRenderer::start(const std::vector<int>& list) noexcept
-{
+{	
+	// Generate the rectangles
 	set_rectangle_data(list);
+	create_rectangles(list);
+
 	while (window.isOpen()) {
 
+		// Event-Loop to keep things working
 		sf::Event ev;
-			while (window.pollEvent(ev)) {
-				if (ev.type == sf::Event::Closed) {
-					window.close();
-				}
+		while (window.pollEvent(ev)) {
+			if (ev.type == sf::Event::Closed) {
+				window.close();
 			}
+		}
 
-		create_rectangles(list);
+		generate_and_draw_text();
 		draw_rectangles();
 		display();
 		clear();
 	}
 }
 
+void WindowRenderer::generate_and_draw_text() noexcept
+{
+	auto delay = sf::Text();
+	auto font = sf::Font();
+	font.loadFromFile("minecraft.ttf");
+	delay.setFont(font);
+
+	delay.setPosition(0, 0);
+	delay.setString("Delay: " + std::to_string(delay_in_ms) + "ms");
+	delay.setCharacterSize(20);
+	delay.setFillColor(sf::Color::White);
+	window.draw(delay);
+}
+
+// std::max_element implementation without needing <algorithm>
 template<class InputIt>
 static constexpr InputIt list_max(InputIt begin, InputIt end) {
 	end = end - 1;
@@ -81,4 +100,14 @@ void WindowRenderer::create_rectangles(const std::vector<int>& list)
 	
 		rectangle_array.push_back(rect);
 	}
+}
+
+void WindowRenderer::swap_rectangle_positions(const int& idx1, const int& idx2) noexcept
+{
+	if (idx1 == idx2)
+		return;
+
+	const int diff = idx2 - idx1;
+	rectangle_array[idx1].move(diff * rect_data.size.x, 0);
+	rectangle_array[idx2].move(-diff * rect_data.size.x, 0);
 }

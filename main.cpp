@@ -2,10 +2,18 @@
 #include "WindowRenderer.hpp"
 #include "Something.hpp"
 
+#include <numeric> // std::iota
+
 int main()
 {
-    WindowRenderer window_r(sf::VideoMode(1120, 630), "THing", 50);
-    std::vector<int> arr{ 1,2,3,4,6,5 };
-    window_r.start(arr);
+    WindowRenderer window_r(sf::VideoMode(1120, 630), 60);
+    std::vector<int> arr(50);
+    std::iota(arr.begin(), arr.end(), 1);
+    window_r.initialize(arr);
+
+    while (window_r.is_window_alive()) {
+        window_r.step();
+    }
+
     return 0;
 }

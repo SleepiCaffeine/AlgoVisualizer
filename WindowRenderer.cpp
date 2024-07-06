@@ -1,6 +1,6 @@
 #include "WindowRenderer.hpp"
 #include <iostream>
-#define MAX_SOUNDS 250
+#define MAX_SOUNDS 50
 
 
 WindowRenderer::WindowRenderer(const sf::VideoMode video_mode, const unsigned int& delay_in_ms, const sf::String& title, const sf::String& audio_file_name)
@@ -42,7 +42,6 @@ void WindowRenderer::TEST_RECTANGLE_SWAPS()
 	swap_rectangle_positions(idx1, idx2);
 }
 
-
 void WindowRenderer::initialize(const std::vector<int>& list) {
 	// Generate the rectangles
 	set_rectangle_data(list);
@@ -58,6 +57,13 @@ void WindowRenderer::step() noexcept
 		if (ev.type == sf::Event::Closed) {
 			window.close();
 		}
+
+		// Way to close the window
+		if (ev.type == sf::Event::KeyPressed) {
+			if (ev.key.code == sf::Keyboard::Escape) {
+				window.close();
+			}
+		}
 	}
 
 	generate_and_draw_text();
@@ -65,8 +71,6 @@ void WindowRenderer::step() noexcept
 	TEST_RECTANGLE_SWAPS();
 	display();
 	clear();
-	//remove_finished_sounds();
-
 }
 
 bool WindowRenderer::is_window_alive() const
@@ -83,28 +87,43 @@ void WindowRenderer::add_sound(const int& curr_value)
 
 	float half_max = rect_data.max_value / 2.0;
 	float relative_value = (curr_value - half_max) / half_max;         // High values - high pitch | Low values - low pitch
-	float positive_value = abs(relative_value + 1) + 1e-4;			   // [-1;1] => (0; 2]  
+	float positive_value = abs(relative_value + 1) + 1e-5;			   // [-1;1] => (0; 2]  
 	new_sound.setPitch(positive_value);
 
 
-	// if the array of sounds is full -> start over
-	if (sound_array.size() >= MAX_SOUNDS - 1) {
-		std::cout << "Clear\n";
-		sound_array.clear();
+	// If the array of sounds is full -> start over
+	static int SOUND_COUNTER = 0;
+	if (SOUND_COUNTER >= MAX_SOUNDS - 1) {
+		SOUND_COUNTER = 0;
 	}
 
-	// Add the sound and play it
-	sound_array.emplace_back(new_sound);
-	sound_array.back().play();
+	// Add the sound, by replacing an earlier sf::Sound object
+	// Because sf::Sound.getPlayingOffset().asMicroseconds() doesn't work properly
+	auto iter = sound_array.begin();
+	std::advance(iter, SOUND_COUNTER);
+	*iter = new_sound;
+	iter->play();
+
+	SOUND_COUNTER++;
 }
 
 void WindowRenderer::remove_finished_sounds() {
-	while (!sound_array.empty()											           	   // The array is not empty
-			&&																		   // And
-		  (sound_array.back().getPlayingOffset().asMilliseconds() >= delay_in_ms)) {   // Front Sound is taking longer than the delay
-		sound_array.pop_back();									                       // Remove front sound
+	while (true) {
+
+		if (sound_array.empty()) {
+			std::cout << "Array is empty" << std::endl;
+			return;
+		}
+		if (sound_array.front().getPlayingOffset().asMicroseconds() < static_cast<sf::Int32>(delay_in_ms)) {
+			std::cout << "Front Sound is taking less than the delay (" << sound_array.front().getPlayingOffset().asMicroseconds() << ")\n";
+			return;
+		}
+			
+		sound_array.erase(sound_array.begin());
+		std::cout << "After Deletion, size is: " << sound_array.size() << std::endl;
 	}
 }
+
 
 // Currently only used to display millisecond delay. TODO: Add Read/Write counts
 void WindowRenderer::generate_and_draw_text() noexcept

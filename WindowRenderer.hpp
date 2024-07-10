@@ -4,23 +4,30 @@
 #include <vector>
 #include <list>
 
-struct RectangleData {
+struct RectangleShapeData {
 	sf::Vector2f size;
 	int max_value;
+};
+
+struct SortingElement {
+	sf::RectangleShape rect;
+	int val;
 };
 
 
 class WindowRenderer
 {
+
 private:
 
 	sf::SoundBuffer					SOUND_BUFFER;
-	std::vector<sf::RectangleShape> rectangle_array;
 	std::list <sf::Sound>			sound_array;
-	
+
+	std::vector<SortingElement> rectangle_array;
 	sf::RenderWindow window;
-	RectangleData	 rect_data;
-	unsigned int	 delay_in_ms;
+
+	RectangleShapeData	 rect_data;
+	unsigned int	     delay_in_ms;
 	
 	void set_rectangle_data(const std::vector<int>& list);
 public:
@@ -48,8 +55,16 @@ public:
 	void swap_rectangle_positions(const int& idx1, const int& idx2) noexcept;
 	void draw_rectangles() noexcept;
 	void set_rectangle_color(const int& idx, const sf::Color color) noexcept;
-	void clear_all_rectangle_colors() noexcept;
 	void TEST_RECTANGLE_SWAPS();
+
+
+	// Setters
+	void set_title(const sf::String& title) noexcept;
+	bool set_audio_file(const sf::String& audio_file) noexcept;
+	void set_delay(const unsigned int& delay_in_ms) noexcept;
+
+	// Getters
+	std::vector<int> get_list_values() noexcept;
 
 };
 

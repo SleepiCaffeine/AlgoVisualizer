@@ -26,9 +26,9 @@ void WindowRenderer::clear() noexcept
 
 void WindowRenderer::draw_rectangles() noexcept
 {
-	for (auto& rect : rectangle_array) {
-		window.draw(rect);
-		rect.setFillColor(sf::Color::White);	// Reset Color
+	for (auto& r : rectangle_array) {
+		window.draw(r.rect);
+		r.rect.setFillColor(sf::Color::White);	// Reset Color
 	}
 }
 
@@ -40,6 +40,35 @@ void WindowRenderer::TEST_RECTANGLE_SWAPS()
 	int idx2 = rand() % (rectangle_array.size());
 
 	swap_rectangle_positions(idx1, idx2);
+}
+
+void WindowRenderer::set_title(const sf::String& title) noexcept
+{
+	window.setTitle(title);
+}
+
+bool WindowRenderer::set_audio_file(const sf::String& audio_file) noexcept
+{
+	if (!SOUND_BUFFER.loadFromFile(audio_file)) {
+		std::cout << "Failed to load audio file into buffer" << std::endl;
+		return false;
+	}
+	return true;
+}
+
+void WindowRenderer::set_delay(const unsigned int& delay) noexcept
+{
+	delay_in_ms = delay;
+	window.setFramerateLimit(1000 / delay_in_ms);
+}
+
+std::vector<int> WindowRenderer::get_list_values() noexcept
+{
+	std::vector<int> values;
+	for (auto& r : rectangle_array) {
+		values.push_back(r.val);
+	}
+	return values;
 }
 
 void WindowRenderer::initialize(const std::vector<int>& list) {
@@ -68,7 +97,6 @@ void WindowRenderer::step() noexcept
 
 	generate_and_draw_text();
 	draw_rectangles();
-	TEST_RECTANGLE_SWAPS();
 	display();
 	clear();
 }
@@ -185,7 +213,7 @@ void WindowRenderer::create_rectangles(const std::vector<int>& list)
 		rect.setPosition(x_position, window.getSize().y - height);
 		rect.setSize(sf::Vector2f(rect_data.size.x, height));
 	
-		rectangle_array.push_back(rect);
+		rectangle_array.push_back({ rect, elem });
 	}
 }
 
@@ -195,26 +223,14 @@ void WindowRenderer::swap_rectangle_positions(const int& idx1, const int& idx2) 
 		return;
 
 	// Determine their x positions, and swap them accordingly
-	const float x_1 = rectangle_array.at(idx1).getPosition().x;
-	const float x_2 = rectangle_array.at(idx2).getPosition().x;
+	const auto pos_1 = rectangle_array.at(idx1).rect.getPosition();
+	const auto pos_2 = rectangle_array.at(idx2).rect.getPosition();
 	// Move rectangles forward by the differences in x positions
-	rectangle_array.at(idx1).move((x_2 - x_1), 0);
-	rectangle_array.at(idx2).move((x_1 - x_2), 0);
-
-	set_rectangle_color(idx1, sf::Color::Green);
-	add_sound(idx1);
-
-	set_rectangle_color(idx2, sf::Color::Green);
-	add_sound(idx2);
+	rectangle_array.at(idx1).rect.setPosition(pos_2.x, pos_1.y);
+	rectangle_array.at(idx2).rect.setPosition(pos_1.x, pos_2.y);
 }
 
 void WindowRenderer::set_rectangle_color(const int& idx, const sf::Color color) noexcept
 {
-	rectangle_array.at(idx).setFillColor(color);
-}
-
-void WindowRenderer::clear_all_rectangle_colors() noexcept
-{
-	for (auto& r : rectangle_array)
-		r.setFillColor(sf::Color::White);
+	rectangle_array.at(idx).rect.setFillColor(color);
 }

@@ -13,14 +13,14 @@ int main()
     // t.set_sorting_methoid(SortingMethod::BubbleSort);
     // t.start();
 
-    std::vector<int> arr(50);
+    std::vector<int> arr(40);
     std::iota(arr.begin(), arr.end(), 1);
     std::shuffle(arr.begin(), arr.end(), std::mt19937{std::random_device{}()});
 
 
 
     AlgorithmVisualizer av(sf::VideoMode(1120, 630), "read_sound.ogg");
-	av.set_delay(500);
+	av.set_delay(16);
     av.initialize_list(arr);
 	av.set_sorting_method(AlgorithmVisualizer::SortingMethod::BubbleSort);
 	av.start();

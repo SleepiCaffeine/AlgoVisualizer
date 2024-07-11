@@ -217,7 +217,7 @@ void WindowRenderer::create_rectangles(const std::vector<int>& list)
 	}
 }
 
-void WindowRenderer::swap_rectangle_positions(const int& idx1, const int& idx2) noexcept
+void WindowRenderer::swap_rectangle_positions(const int idx1, const int idx2) noexcept
 {
 	if (idx1 == idx2)
 		return;
@@ -228,6 +228,8 @@ void WindowRenderer::swap_rectangle_positions(const int& idx1, const int& idx2) 
 	// Move rectangles forward by the differences in x positions
 	rectangle_array.at(idx1).rect.setPosition(pos_2.x, pos_1.y);
 	rectangle_array.at(idx2).rect.setPosition(pos_1.x, pos_2.y);
+
+	std::swap(rectangle_array.at(idx1), rectangle_array.at(idx2));
 }
 
 void WindowRenderer::set_rectangle_color(const int& idx, const sf::Color color) noexcept

@@ -1,6 +1,7 @@
 #include "SFML/Window.hpp"
 #include "SFML/Graphics.hpp"
 #include "SFML/Audio.hpp"
+
 #include <vector>
 #include <list>
 
@@ -48,11 +49,12 @@ public:
 	void add_sound(const int& curr_value);
 
 	// Handling text
+	// Handling text
 	void generate_and_draw_text() noexcept;
 
 	// Handling Rectangles
 	void create_rectangles(const std::vector<int>& list);
-	void swap_rectangle_positions(const int& idx1, const int& idx2) noexcept;
+	void swap_rectangle_positions(const int idx1, const int idx2) noexcept;
 	void draw_rectangles() noexcept;
 	void set_rectangle_color(const int& idx, const sf::Color color) noexcept;
 	void TEST_RECTANGLE_SWAPS();

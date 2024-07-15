@@ -3,6 +3,7 @@
 #include "SFML/Audio.hpp"
 
 #include <vector>
+#include "SortingElement.hpp"
 #include <list>
 
 struct RectangleShapeData {
@@ -10,25 +11,19 @@ struct RectangleShapeData {
 	int max_value;
 };
 
-struct SortingElement {
-	sf::RectangleShape rect;
-	int val;
-};
-
-
 class WindowRenderer
 {
 
 private:
 
-	sf::SoundBuffer					SOUND_BUFFER;
-	std::list <sf::Sound>			sound_array;
+	sf::SoundBuffer	SOUND_BUFFER;
+	std::list <sf::Sound> sound_array;
 
 	std::vector<SortingElement> rectangle_array;
 	sf::RenderWindow window;
 
-	RectangleShapeData	 rect_data;
-	unsigned int	     delay_in_ms;
+	RectangleShapeData rect_data;
+	unsigned int delay_in_ms;
 	
 	void set_rectangle_data(const std::vector<int>& list);
 public:
@@ -42,7 +37,8 @@ public:
 	void initialize(const std::vector<int>& list);
 	void step() noexcept;
 	bool is_window_alive() const;
-
+	void close();
+	bool poll_event(sf::Event& event);
 	// Handling audio
 
 	void remove_finished_sounds();
@@ -57,7 +53,6 @@ public:
 	void swap_rectangle_positions(const int idx1, const int idx2) noexcept;
 	void draw_rectangles() noexcept;
 	void set_rectangle_color(const int& idx, const sf::Color color) noexcept;
-	void TEST_RECTANGLE_SWAPS();
 
 
 	// Setters
@@ -65,8 +60,6 @@ public:
 	bool set_audio_file(const sf::String& audio_file) noexcept;
 	void set_delay(const unsigned int& delay_in_ms) noexcept;
 
-	// Getters
-	std::vector<int> get_list_values() noexcept;
-
+	std::vector<SortingElement>& get_array_ref() noexcept;
 };
 

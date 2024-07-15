@@ -24,12 +24,18 @@
     <ClCompile Include="AlgorithmVisualizer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SortingElement.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="WindowRenderer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="AlgorithmVisualizer.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SortingElement.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

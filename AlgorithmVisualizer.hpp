@@ -17,7 +17,6 @@ public:
 private:
 	WindowRenderer window_renderer;
 	SortingMethod  sorting_method;
-	std::vector<int> list;
 
 public:
 

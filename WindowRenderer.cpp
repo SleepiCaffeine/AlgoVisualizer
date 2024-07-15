@@ -27,20 +27,11 @@ void WindowRenderer::clear() noexcept
 void WindowRenderer::draw_rectangles() noexcept
 {
 	for (auto& r : rectangle_array) {
-		window.draw(r.rect);
-		r.rect.setFillColor(sf::Color::White);	// Reset Color
+		window.draw(r.get_rect());
+		r.set_color(sf::Color::White);	// Reset Color
 	}
 }
 
-void WindowRenderer::TEST_RECTANGLE_SWAPS()
-{
-	// Generate 2 random indecies to swap between
-	// No need for fancy-shmancy std::uniform_int_distribution or std::mt19937
-	int idx1 = rand() % (rectangle_array.size());
-	int idx2 = rand() % (rectangle_array.size());
-
-	swap_rectangle_positions(idx1, idx2);
-}
 
 void WindowRenderer::set_title(const sf::String& title) noexcept
 {
@@ -59,16 +50,15 @@ bool WindowRenderer::set_audio_file(const sf::String& audio_file) noexcept
 void WindowRenderer::set_delay(const unsigned int& delay) noexcept
 {
 	delay_in_ms = delay;
-	window.setFramerateLimit(1000 / delay_in_ms);
+	if (delay_in_ms == 0)
+		window.setFramerateLimit(0);
+	else
+		window.setFramerateLimit(1000 / delay_in_ms);
 }
 
-std::vector<int> WindowRenderer::get_list_values() noexcept
+std::vector<SortingElement>& WindowRenderer::get_array_ref()  noexcept
 {
-	std::vector<int> values;
-	for (auto& r : rectangle_array) {
-		values.push_back(r.val);
-	}
-	return values;
+	return rectangle_array;
 }
 
 void WindowRenderer::initialize(const std::vector<int>& list) {
@@ -106,6 +96,15 @@ bool WindowRenderer::is_window_alive() const
 	return window.isOpen();
 }
 
+void WindowRenderer::close() {
+	return window.close();
+}
+
+bool WindowRenderer::poll_event(sf::Event& event)
+{
+	return window.pollEvent(event);
+}
+
 void WindowRenderer::add_sound(const int& curr_value)
 {
 	// Create the sound with the appropriate volume and pitch
@@ -133,23 +132,6 @@ void WindowRenderer::add_sound(const int& curr_value)
 	iter->play();
 
 	SOUND_COUNTER++;
-}
-
-void WindowRenderer::remove_finished_sounds() {
-	while (true) {
-
-		if (sound_array.empty()) {
-			std::cout << "Array is empty" << std::endl;
-			return;
-		}
-		if (sound_array.front().getPlayingOffset().asMicroseconds() < static_cast<sf::Int32>(delay_in_ms)) {
-			std::cout << "Front Sound is taking less than the delay (" << sound_array.front().getPlayingOffset().asMicroseconds() << ")\n";
-			return;
-		}
-			
-		sound_array.erase(sound_array.begin());
-		std::cout << "After Deletion, size is: " << sound_array.size() << std::endl;
-	}
 }
 
 
@@ -213,7 +195,7 @@ void WindowRenderer::create_rectangles(const std::vector<int>& list)
 		rect.setPosition(x_position, window.getSize().y - height);
 		rect.setSize(sf::Vector2f(rect_data.size.x, height));
 	
-		rectangle_array.push_back({ rect, elem });
+		rectangle_array.emplace_back(SortingElement( rect, elem ));
 	}
 }
 
@@ -223,16 +205,15 @@ void WindowRenderer::swap_rectangle_positions(const int idx1, const int idx2) no
 		return;
 
 	// Determine their x positions, and swap them accordingly
-	const auto pos_1 = rectangle_array.at(idx1).rect.getPosition();
-	const auto pos_2 = rectangle_array.at(idx2).rect.getPosition();
-	// Move rectangles forward by the differences in x positions
-	rectangle_array.at(idx1).rect.setPosition(pos_2.x, pos_1.y);
-	rectangle_array.at(idx2).rect.setPosition(pos_1.x, pos_2.y);
+	const auto x1 = rectangle_array.at(idx1).get_pos().x;
+	const auto x2 = rectangle_array.at(idx2).get_pos().x;
 
-	std::swap(rectangle_array.at(idx1), rectangle_array.at(idx2));
+	// Move rectangles forward by the differences in x positions
+	rectangle_array.at(idx1).move_by(sf::Vector2f(x2 - x1, 0));
+	rectangle_array.at(idx2).move_by(sf::Vector2f(x1 - x2, 0));
 }
 
 void WindowRenderer::set_rectangle_color(const int& idx, const sf::Color color) noexcept
 {
-	rectangle_array.at(idx).rect.setFillColor(color);
+	rectangle_array.at(idx).set_color(color);
 }

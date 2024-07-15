@@ -1,6 +1,8 @@
 #include "WindowRenderer.hpp"
 #include <iostream>
-#define MAX_SOUNDS 50
+#define MAX_SOUNDS 120
+#define SOUND_VOLUME 20
+#define MINIMUM_PITCH 0.5
 
 
 WindowRenderer::WindowRenderer(const sf::VideoMode video_mode, const unsigned int& delay_in_ms, const sf::String& title, const sf::String& audio_file_name)
@@ -65,6 +67,11 @@ void WindowRenderer::initialize(const std::vector<int>& list) {
 	// Generate the rectangles
 	set_rectangle_data(list);
 	create_rectangles(list);
+
+	// Create the sound with the appropriate volume
+	sf::Sound sound(SOUND_BUFFER);
+	sound.setVolume(SOUND_VOLUME);
+	sound_array = std::list<sf::Sound>(MAX_SOUNDS, sound);
 }
 
 void WindowRenderer::step() noexcept
@@ -107,16 +114,9 @@ bool WindowRenderer::poll_event(sf::Event& event)
 
 void WindowRenderer::add_sound(const int& curr_value)
 {
-	// Create the sound with the appropriate volume and pitch
-	sf::Sound new_sound(SOUND_BUFFER);
-	new_sound.setVolume(30);
-
-
 	float half_max = rect_data.max_value / 2.0;
-	float relative_value = (curr_value - half_max) / half_max;         // High values - high pitch | Low values - low pitch
-	float positive_value = abs(relative_value + 1) + 1e-5;			   // [-1;1] => (0; 2]  
-	new_sound.setPitch(positive_value);
-
+	float relative_value = (curr_value - half_max) / half_max;                 // High values - high pitch | Low values - low pitch
+	float positive_value = abs(relative_value + 1) + MINIMUM_PITCH + 1e-5;	   // [-1;1] => (0; 2] + MINIMUM_PITCH 
 
 	// If the array of sounds is full -> start over
 	static int SOUND_COUNTER = 0;
@@ -124,11 +124,11 @@ void WindowRenderer::add_sound(const int& curr_value)
 		SOUND_COUNTER = 0;
 	}
 
-	// Add the sound, by replacing an earlier sf::Sound object
-	// Because sf::Sound.getPlayingOffset().asMicroseconds() doesn't work properly
 	auto iter = sound_array.begin();
 	std::advance(iter, SOUND_COUNTER);
-	*iter = new_sound;
+	// In effect - the same as resetting the audio
+	iter->stop();
+	iter->setPitch(positive_value);
 	iter->play();
 
 	SOUND_COUNTER++;
@@ -176,7 +176,7 @@ static constexpr InputIt list_max(InputIt begin, InputIt end) {
 void WindowRenderer::set_rectangle_data(const std::vector<int>& list) {
 	rect_data.max_value = *list_max(list.begin(), list.end());
 	// Width of a rectangle
-	rect_data.size.x = static_cast<float>(window.getSize().x / list.size());
+	rect_data.size.x = window.getSize().x / static_cast<float>(list.size());
 	// How much (%) does a value of '1' take up
 	rect_data.size.y = 1 / static_cast<float>(rect_data.max_value);
 }

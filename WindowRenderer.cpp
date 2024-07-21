@@ -1,219 +1,107 @@
 #include "WindowRenderer.hpp"
 #include <iostream>
-#define MAX_SOUNDS 120
-#define SOUND_VOLUME 20
-#define MINIMUM_PITCH 0.5
+
+// Saw this in a "Pezzza's Work" video, thought it looked nice
+template <typename T>
+[[no_discard]] T to(const auto& value) noexcept { return static_cast<T>(value); }
 
 
-WindowRenderer::WindowRenderer(const sf::VideoMode video_mode, const unsigned int& delay_in_ms, const sf::String& title, const sf::String& audio_file_name)
-	: sound_array{ MAX_SOUNDS }, window{ video_mode, title }, rect_data{ sf::Vector2f(0,0), -1 }, delay_in_ms{ delay_in_ms }
-{ 
-	if (!SOUND_BUFFER.loadFromFile(audio_file_name)) {
-		std::cout << "Could not load audio file" << std::endl;
+void WindowRenderer::draw_rectangles()
+{
+	for (const sf::RectangleShape& rect : rectangles) {
+		render_window.draw(rect);
 	}
-
-	window.setActive();
-	window.setFramerateLimit(1000 / delay_in_ms);
 }
 
-void WindowRenderer::display() noexcept
+void WindowRenderer::draw_text(const sf::Time& time)
 {
-	window.display();
+	sf::String str = "Delay: " + std::to_string(time.asMicroseconds()) + " us";
+	DEBUG_TEXT->setString(str);
+	render_window.draw(*DEBUG_TEXT);
 }
 
-void WindowRenderer::clear() noexcept
-{
-	window.clear(sf::Color::Black);
-}
+void run_window(sf::RenderWindow* render_window) {
+	render_window->setActive(true);
+	while (render_window->isOpen()) {
 
-void WindowRenderer::draw_rectangles() noexcept
-{
-	for (auto& r : rectangle_array) {
-		window.draw(r.get_rect());
-		r.set_color(sf::Color::White);	// Reset Color
+		render_window->display();
+		render_window->clear(sf::Color::Black);
 	}
 }
 
 
-void WindowRenderer::set_title(const sf::String& title) noexcept
-{
-	window.setTitle(title);
-}
 
-bool WindowRenderer::set_audio_file(const sf::String& audio_file) noexcept
-{
-	if (!SOUND_BUFFER.loadFromFile(audio_file)) {
-		std::cout << "Failed to load audio file into buffer" << std::endl;
-		return false;
-	}
-	return true;
-}
 
-void WindowRenderer::set_delay(const unsigned int& delay) noexcept
-{
-	delay_in_ms = delay;
-	if (delay_in_ms == 0)
-		window.setFramerateLimit(0);
-	else
-		window.setFramerateLimit(1000 / delay_in_ms);
-}
-
-std::vector<SortingElement>& WindowRenderer::get_array_ref()  noexcept
-{
-	return rectangle_array;
-}
-
-void WindowRenderer::initialize(const std::vector<int>& list) {
-	// Generate the rectangles
-	set_rectangle_data(list);
-	create_rectangles(list);
-
-	// Create the sound with the appropriate volume
-	sf::Sound sound(SOUND_BUFFER);
-	sound.setVolume(SOUND_VOLUME);
-	sound_array = std::list<sf::Sound>(MAX_SOUNDS, sound);
-}
-
-void WindowRenderer::step() noexcept
-{	
-
-	// Event-Loop to keep things working
-	sf::Event ev;
-	while (window.pollEvent(ev)) {
-		if (ev.type == sf::Event::Closed) {
-			window.close();
-		}
-
-		// Way to close the window
-		if (ev.type == sf::Event::KeyPressed) {
-			if (ev.key.code == sf::Keyboard::Escape) {
-				window.close();
+void WindowRenderer::start(const std::vector<Ushort>& list) {
+	//run_window(&render_window);
+	while (render_window.isOpen()) {
+		sf::Event event;
+		while (render_window.pollEvent(event)) {
+			if (event.type == sf::Event::Closed) {
+				render_window.close();
 			}
 		}
+		render_window.clear(sf::Color::Black);
+		step(list);
+		render_window.display();
 	}
-
-	generate_and_draw_text();
-	draw_rectangles();
-	display();
-	clear();
 }
 
-bool WindowRenderer::is_window_alive() const
+void WindowRenderer::step(const std::vector<Ushort>& list)
 {
-	return window.isOpen();
+	sf::Clock clock;
+	draw(clock.getElapsedTime());
 }
 
-void WindowRenderer::close() {
-	return window.close();
-}
+WindowRenderer::WindowRenderer(const WindowConfig& cfg, const std::vector<Ushort>& list)
+	: render_window(sf::VideoMode(cfg.width, cfg.height), cfg.title, cfg.style) {
 
-bool WindowRenderer::poll_event(sf::Event& event)
-{
-	return window.pollEvent(event);
-}
-
-void WindowRenderer::add_sound(const int& curr_value)
-{
-	float half_max = rect_data.max_value / 2.0;
-	float relative_value = (curr_value - half_max) / half_max;                 // High values - high pitch | Low values - low pitch
-	float positive_value = abs(relative_value + 1) + MINIMUM_PITCH + 1e-5;	   // [-1;1] => (0; 2] + MINIMUM_PITCH 
-
-	// If the array of sounds is full -> start over
-	static int SOUND_COUNTER = 0;
-	if (SOUND_COUNTER >= MAX_SOUNDS - 1) {
-		SOUND_COUNTER = 0;
-	}
-
-	auto iter = sound_array.begin();
-	std::advance(iter, SOUND_COUNTER);
-	// In effect - the same as resetting the audio
-	iter->stop();
-	iter->setPitch(positive_value);
-	iter->play();
-
-	SOUND_COUNTER++;
-}
+	Ushort max_element = *std::ranges::max_element(list.begin(), list.end());
+	// In theory - list.size() and max_element should be the same, however I do not trust people.
+	dimensions.width  = render_window.getSize().x / to<float>(list.size());
+	dimensions.height = render_window.getSize().y / to<float>(max_element);
 
 
-// Currently only used to display millisecond delay. TODO: Add Read/Write counts
-void WindowRenderer::generate_and_draw_text() noexcept
-{
-	// Rendering Delay in ms
-	auto delay = sf::Text();
-	auto font = sf::Font();
-	font.loadFromFile("minecraft.ttf");
-	delay.setFont(font);
 
-	delay.setPosition(0, 0);
-	delay.setString("Delay: " + std::to_string(delay_in_ms) + "ms");
-	delay.setCharacterSize(20);
-	delay.setFillColor(sf::Color::White);
-	window.draw(delay);
-
-
-	// Rendering All comparisons / reads
-
-
-	// Rendering Algorithm name
-
-}
-
-// std::max_element implementation without needing <algorithm>
-template<class InputIt>
-static constexpr InputIt list_max(InputIt begin, InputIt end) {
-	end = end - 1;
-	if (begin == end)
-		return end;
-
-	InputIt max = begin;
-	while (++begin != end)
-		if (*begin > *max)
-			max = begin;
-	return max;
-}
-
-
-void WindowRenderer::set_rectangle_data(const std::vector<int>& list) {
-	rect_data.max_value = *list_max(list.begin(), list.end());
-	// Width of a rectangle
-	rect_data.size.x = window.getSize().x / static_cast<float>(list.size());
-	// How much (%) does a value of '1' take up
-	rect_data.size.y = 1 / static_cast<float>(rect_data.max_value);
-}
-
-void WindowRenderer::create_rectangles(const std::vector<int>& list)
-{
-	rectangle_array.clear();
-	for (const int& elem : list) {
-		sf::RectangleShape rect;
-
-		// How much of the window height is occupied by the rectangle
-		float height     = rect_data.size.y * elem * window.getSize().y;
-		// Where is the rectangle's x origin point
-		float x_position = rectangle_array.size() * rect_data.size.x;
-
-		rect.setPosition(x_position, window.getSize().y - height);
-		rect.setSize(sf::Vector2f(rect_data.size.x, height));
+	DEBUG_TEXT = std::make_unique<sf::Text>();
 	
-		rectangle_array.emplace_back(SortingElement( rect, elem ));
+	sf::Font font;
+	
+	if (!font.loadFromFile("Minecraft.ttf")) {
+		throw std::runtime_error("Failed to load font");
 	}
+	
+
+	DEBUG_TEXT->setFont(font);
+	DEBUG_TEXT->setCharacterSize(16);
+	DEBUG_TEXT->setFillColor(sf::Color::White);
+	DEBUG_TEXT->setStyle(sf::Text::Bold);
+	DEBUG_TEXT->setOutlineThickness(2);
+	DEBUG_TEXT->setPosition(20, 20);
+
+	create_rectangles(list);
+	start(list);
 }
 
-void WindowRenderer::swap_rectangle_positions(const int idx1, const int idx2) noexcept
+void WindowRenderer::draw(const sf::Time& time)
 {
-	if (idx1 == idx2)
-		return;
-
-	// Determine their x positions, and swap them accordingly
-	const auto x1 = rectangle_array.at(idx1).get_pos().x;
-	const auto x2 = rectangle_array.at(idx2).get_pos().x;
-
-	// Move rectangles forward by the differences in x positions
-	rectangle_array.at(idx1).move_by(sf::Vector2f(x2 - x1, 0));
-	rectangle_array.at(idx2).move_by(sf::Vector2f(x1 - x2, 0));
+	draw_rectangles();
+	draw_text(time);
 }
 
-void WindowRenderer::set_rectangle_color(const int& idx, const sf::Color color) noexcept
-{
-	rectangle_array.at(idx).set_color(color);
+void WindowRenderer::create_rectangles(const std::vector<Ushort>& list) {
+	rectangles.clear();
+	for (const Ushort& element : list) {
+
+		sf::RectangleShape shape;
+		float height = to<float>(dimensions.height * element);
+		float x_pos = to<float>(rectangles.size() * dimensions.width);
+		float y_pos = render_window.getSize().y - height;
+
+
+		shape.setSize({ to<float>(dimensions.width), height });
+		shape.setFillColor(sf::Color::White);
+		shape.setPosition(x_pos, y_pos);
+		rectangles.emplace_back(shape);
+	}
 }

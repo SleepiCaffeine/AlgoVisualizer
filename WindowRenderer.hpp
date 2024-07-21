@@ -1,65 +1,71 @@
+#pragma once
 #include "SFML/Window.hpp"
 #include "SFML/Graphics.hpp"
 #include "SFML/Audio.hpp"
 
-#include <vector>
 #include "SortingElement.hpp"
-#include <list>
 
-struct RectangleShapeData {
-	sf::Vector2f size;
-	int max_value;
+
+#include <list>
+#include <memory>
+
+// 
+using Ushort = unsigned short;
+
+struct RectangleDimensions {
+	double width;	// Width of a single element
+	double height;	// Height of an element with value 1
 };
 
-class WindowRenderer
-{
+struct WindowConfig {
+	Ushort height = 1080;
+	Ushort width = 1920;
+	Ushort frames_per_second = 0; // Zero means no upper bound
+	Ushort millisecond_delay = 0;
+	sf::String title = "Sorting Algorithm Visualizer";
+	sf::Uint32 style = sf::Style::Default;
+	bool vSync = false;
 
+	void setFullscreen(const bool fullscreen = true) noexcept {
+		if (fullscreen)
+			style |= sf::Style::Fullscreen;
+		else
+			style &= ~sf::Style::Fullscreen;
+	}
+	void setScreenSize(const Ushort w, Ushort h) noexcept {
+		width = w;
+		height = h;
+	}
+	void setFramesPerSecond(const Ushort fps) noexcept {
+		frames_per_second = fps;
+	}
+	void setMillisecondDelay(const Ushort ms) noexcept {
+		millisecond_delay = ms;
+	}
+	void setVSync(const bool vsync = true) noexcept {
+		vSync = vsync;
+	}
+	void setTitle(const sf::String& t) noexcept {
+		title = t;
+	}
+};
+
+class WindowRenderer {
 private:
+	sf::RenderWindow render_window;
+	std::unique_ptr<sf::Text> DEBUG_TEXT; // Temporary, used for time measurements
+	std::vector<sf::RectangleShape> rectangles;
+	RectangleDimensions dimensions;
 
-	sf::SoundBuffer	SOUND_BUFFER;
-	std::list <sf::Sound> sound_array;
 
-	std::vector<SortingElement> rectangle_array;
-	sf::RenderWindow window;
-
-	RectangleShapeData rect_data;
-	unsigned int delay_in_ms;
-	
-	void set_rectangle_data(const std::vector<int>& list);
+	void draw_rectangles();
+	void draw_text(const sf::Time& time);
 public:
 
-	WindowRenderer(const sf::VideoMode video_mode, const unsigned int& delay_in_ms,
-				   const sf::String& title = "algo", const sf::String& audio_file = "read_sound.ogg");
+	WindowRenderer(const WindowConfig& config, const std::vector<Ushort>& list);
 
-	// Handling window processes
-	void display() noexcept;
-	void clear() noexcept;
-	void initialize(const std::vector<int>& list);
-	void step() noexcept;
-	bool is_window_alive() const;
-	void close();
-	bool poll_event(sf::Event& event);
-	// Handling audio
-
-	void remove_finished_sounds();
-	void add_sound(const int& curr_value);
-
-	// Handling text
-	// Handling text
-	void generate_and_draw_text() noexcept;
-
-	// Handling Rectangles
-	void create_rectangles(const std::vector<int>& list);
-	void swap_rectangle_positions(const int idx1, const int idx2) noexcept;
-	void draw_rectangles() noexcept;
-	void set_rectangle_color(const int& idx, const sf::Color color) noexcept;
-
-
-	// Setters
-	void set_title(const sf::String& title) noexcept;
-	bool set_audio_file(const sf::String& audio_file) noexcept;
-	void set_delay(const unsigned int& delay_in_ms) noexcept;
-
-	std::vector<SortingElement>& get_array_ref() noexcept;
+	void start(const std::vector<Ushort>& list);
+	void step(const std::vector<Ushort>& list);
+	void draw(const sf::Time& time);
+	void create_rectangles(const std::vector<Ushort>& list);
 };
-

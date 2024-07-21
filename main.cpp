@@ -3,17 +3,16 @@
 #include <numeric> // std::iota
 #include <algorithm>
 #include <random>
+#include <ranges>
 
 int main()
 {
-    std::vector<int> arr(1500);
+    std::vector<unsigned short> arr(1000);
     std::iota(arr.begin(), arr.end(), 1);
-    std::shuffle(arr.begin(), arr.end(), std::mt19937{std::random_device{}()});
+    std::ranges::shuffle(arr, std::mt19937{std::random_device{}()});
 
-    AlgorithmVisualizer av(sf::VideoMode(1920, 1080), "read_sound.ogg");
-	av.set_delay(0);
-    av.initialize_list(arr);
-	av.set_sorting_method(AlgorithmVisualizer::SortingMethod::QuickSort);
-	av.start();
-    return 0;
+
+    WindowConfig cfg;
+    cfg.setFullscreen(false);
+    WindowRenderer wr(cfg, arr);
 }

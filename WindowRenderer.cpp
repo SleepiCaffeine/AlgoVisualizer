@@ -20,20 +20,28 @@ void WindowRenderer::draw_text(const sf::Time& time)
 	render_window.draw(*DEBUG_TEXT);
 }
 
-void run_window(sf::RenderWindow* render_window) {
-	render_window->setActive(true);
-	while (render_window->isOpen()) {
+sf::Mutex mutex;
+void WindowRenderer::run_window() {
+	sf::Lock lock(mutex);
 
-		render_window->display();
-		render_window->clear(sf::Color::Black);
+	render_window.setActive(true);
+	while (render_window.isOpen()) {
+		render_window.clear(sf::Color::Black);
+		step();
+		render_window.display();
 	}
 }
 
 
 
 
-void WindowRenderer::start(const std::vector<Ushort>& list) {
-	//run_window(&render_window);
+void WindowRenderer::start() {
+	render_window.setActive(false);
+	sf::Thread t(&WindowRenderer::run_window, this);
+	t.launch();
+
+
+
 	while (render_window.isOpen()) {
 		sf::Event event;
 		while (render_window.pollEvent(event)) {
@@ -41,13 +49,11 @@ void WindowRenderer::start(const std::vector<Ushort>& list) {
 				render_window.close();
 			}
 		}
-		render_window.clear(sf::Color::Black);
-		step(list);
-		render_window.display();
 	}
+
 }
 
-void WindowRenderer::step(const std::vector<Ushort>& list)
+void WindowRenderer::step()
 {
 	sf::Clock clock;
 	draw(clock.getElapsedTime());
@@ -80,7 +86,7 @@ WindowRenderer::WindowRenderer(const WindowConfig& cfg, const std::vector<Ushort
 	DEBUG_TEXT->setPosition(20, 20);
 
 	create_rectangles(list);
-	start(list);
+	start();
 }
 
 void WindowRenderer::draw(const sf::Time& time)

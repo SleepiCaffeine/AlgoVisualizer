@@ -60,12 +60,13 @@ private:
 
 	void draw_rectangles();
 	void draw_text(const sf::Time& time);
+	void run_window();
 public:
 
 	WindowRenderer(const WindowConfig& config, const std::vector<Ushort>& list);
 
-	void start(const std::vector<Ushort>& list);
-	void step(const std::vector<Ushort>& list);
+	void start();
+	void step();
 	void draw(const sf::Time& time);
 	void create_rectangles(const std::vector<Ushort>& list);
 };

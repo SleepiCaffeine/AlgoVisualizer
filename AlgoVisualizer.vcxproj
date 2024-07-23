@@ -136,16 +136,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AlgorithmVisualizer.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Sorter.cpp" />
     <ClCompile Include="SortingElement.cpp" />
+    <ClCompile Include="VisualArray.cpp" />
     <ClCompile Include="WindowRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AlgorithmVisualizer.hpp" />
-    <ClInclude Include="Sorter.hpp" />
     <ClInclude Include="SortingElement.hpp" />
+    <ClInclude Include="VisualArray.hpp" />
     <ClInclude Include="WindowRenderer.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

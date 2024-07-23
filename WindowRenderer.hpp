@@ -19,12 +19,12 @@ struct Dimensions {
 
 
 struct WindowConfig {
-	Ushort height = 1080;
-	Ushort width = 1920;
-	Ushort frames_per_second = 1000; // Zero means no upper bound
+	Ushort height = 900;
+	Ushort width = 1600;
+	Ushort frames_per_second = 0; // Zero means no upper bound
 	Ushort microsecond_delay = 0;
 	sf::String title = "Sorting Algorithm Visualizer";
-	sf::Uint32 style = sf::Style::Default | sf::Style::Fullscreen;
+	sf::Uint32 style = sf::Style::Default;
 	bool vSync = false;
 
 	void setFullscreen(const bool fullscreen = true) noexcept {

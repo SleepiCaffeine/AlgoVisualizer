@@ -49,7 +49,8 @@ public:
 
 
 	void test_read();
-
+	void step();
+	bool is_window_alive();
 	void poll_event();
 };
 

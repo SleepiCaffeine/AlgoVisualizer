@@ -24,7 +24,7 @@ struct WindowConfig {
 	Ushort frames_per_second = 1000; // Zero means no upper bound
 	Ushort microsecond_delay = 0;
 	sf::String title = "Sorting Algorithm Visualizer";
-	sf::Uint32 style = sf::Style::Default;
+	sf::Uint32 style = sf::Style::Default | sf::Style::Fullscreen;
 	bool vSync = false;
 
 	void setFullscreen(const bool fullscreen = true) noexcept {
@@ -73,6 +73,7 @@ public:
 
 	void start();
 	void poll_event();
+	void sim_mouse_move();
 	void step();
 	void draw(const sf::Time& time);
 

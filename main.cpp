@@ -14,11 +14,13 @@ int main()
     std::ranges::shuffle(arr, std::mt19937{std::random_device{}()});
 
 
-    /*AlgorithmVisualizer av(arr);
-    while (true)
-	{
-		av.test_read();
-	}*/
+    AlgorithmVisualizer av(arr);
 
-    WindowRenderer wr(WindowConfig(), arr);
+    int counter = 0;
+    while (true) {
+        auto r  = av.get_at(counter);
+        av.set_at(counter, 2);
+        counter %= arr.size();
+    }
+
 }

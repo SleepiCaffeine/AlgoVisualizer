@@ -5,17 +5,18 @@
 template <typename T>
 [[no_discard]] T to(const auto& value) noexcept { return static_cast<T>(value); }
 
-
+sf::Mutex mutex;
 void WindowRenderer::draw_rectangles()
 {
+	sf::Lock lock(mutex);
 	for (const sf::RectangleShape& rect : rectangles) {
 		render_window.draw(rect);
-		//rect.setFillColor(sf::Color::White);
 	}
 }
 
 void WindowRenderer::draw_text(const sf::Time& time)
 {
+	sf::Lock lock(mutex);
 	// Setting the string in such an ugly way shaved off about 40% of time between draw calls...
 	// Delay: _ microseconds | FPS : 1 million / microseconds
 	DEBUG_TEXT->setString("Delay: "    + std::to_string(time.asMicroseconds()) +
@@ -23,7 +24,7 @@ void WindowRenderer::draw_text(const sf::Time& time)
 	render_window.draw(*DEBUG_TEXT);
 }
 
-sf::Mutex mutex;
+
 void WindowRenderer::run_window() {
 	sf::Lock lock(mutex);
 	render_window.setActive(true);
@@ -58,14 +59,12 @@ void WindowRenderer::start() {
 	sf::Thread t(&WindowRenderer::run_window, this);
 	t.launch();
 
-	while (render_window.isOpen()) {
-		poll_event();
-	}
+
 }
 
 void WindowRenderer::step()
 {
-	//rectangles.at(9).setFillColor(sf::Color::Green);
+	rectangles.at(9).setFillColor(sf::Color::Green);
 	draw(last_draw_call_clock.getElapsedTime());
 	last_draw_call_clock.restart();
 }

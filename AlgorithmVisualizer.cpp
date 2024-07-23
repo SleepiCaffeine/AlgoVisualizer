@@ -14,10 +14,9 @@ inline void AlgorithmVisualizer::set_color(const ULL& idx, const sf::Color c)
 AlgorithmVisualizer::AlgorithmVisualizer(const std::vector<Ushort>& arr) :
 	window_renderer(WindowConfig(), arr)
 {
-
 	auto rectangles = window_renderer.get_rectangles();
 	for (ULL i = 0; i < arr.size(); i++) {
-		elements.push_back({ arr.at(i), rectangles.at(i) });
+		elements.push_back({arr.at(i), rectangles.at(i) });
 	}
 }
 
@@ -82,7 +81,16 @@ void AlgorithmVisualizer::test_read()
 	auto r = get_at(9);
 }
 
+void AlgorithmVisualizer::step()
+{
+	window_renderer.step();
+}
+
 void AlgorithmVisualizer::poll_event()
 {
 	window_renderer.poll_event();
+}
+
+bool AlgorithmVisualizer::is_window_alive() {
+	return window_renderer.is_open();
 }

@@ -1,39 +1,32 @@
 ﻿#include "WindowRenderer.hpp"
 #include <format>
+#include <iostream>
 
 // Saw this in a "Pezzza's Work" video, thought it looked nice
 template <typename T>
 [[no_discard]] T to(const auto& value) noexcept { return static_cast<T>(value); }
 
-sf::Mutex mutex;
 void WindowRenderer::draw_rectangles()
 {
-	sf::Lock lock(mutex);
-	for (const sf::RectangleShape& rect : rectangles) {
+	for (sf::RectangleShape& rect : rectangles) {
 		render_window.draw(rect);
+		rect.setFillColor(sf::Color::White);
 	}
 }
 
-void WindowRenderer::draw_text(const sf::Time& time)
+void WindowRenderer::draw_text()
 {
-	sf::Lock lock(mutex);
 	// Setting the string in such an ugly way shaved off about 40% of time between draw calls...
 	// Delay: _ microseconds | FPS : 1 million / microseconds
-	DEBUG_TEXT->setString("Delay: "    + std::to_string(time.asMicroseconds()) +
-						  " us\nFPS: " + std::to_string(to<unsigned short>(1000000.f / time.asMicroseconds())));
-	render_window.draw(*DEBUG_TEXT);
+	const float million = 1000000.f;
+	auto time = last_draw_call_clock.getElapsedTime();
+	DEBUG_TEXT.setString(std::format("Delay: {} us\nFPS: {}", time.asMicroseconds(), million / time.asMicroseconds()));
+	render_window.draw(DEBUG_TEXT);
 }
 
 
-void WindowRenderer::run_window() {
-	sf::Lock lock(mutex);
-	render_window.setActive(true);
-
-	while (render_window.isOpen()) {
-		render_window.clear(sf::Color::Black);
-		step();
-		render_window.display();
-	}
+bool WindowRenderer::get_event(sf::Event& e) {
+	return render_window.pollEvent(e);
 }
 
 void WindowRenderer::poll_event() {
@@ -53,20 +46,39 @@ void WindowRenderer::poll_event() {
 	}
 }
 
+void WindowRenderer::clear(const sf::Color c)
+{
+	render_window.clear(c);
+}
+
+void WindowRenderer::close()
+{
+	render_window.close();
+}
+
+void WindowRenderer::display()
+{
+	render_window.display();
+}
+
 
 void WindowRenderer::start() {
-	render_window.setActive(false);
-	sf::Thread t(&WindowRenderer::run_window, this);
-	t.launch();
+	//render_window.setActive(false);
+	//sf::Thread t(&WindowRenderer::run_window, this);
+	//t.launch();
+	return;
 
+}
 
+void WindowRenderer::set_active(const bool active)
+{
+	render_window.setActive(active);
 }
 
 void WindowRenderer::step()
 {
-	rectangles.at(9).setFillColor(sf::Color::Green);
-	draw(last_draw_call_clock.getElapsedTime());
-	last_draw_call_clock.restart();
+
+	draw();
 }
 
 WindowRenderer::WindowRenderer(const WindowConfig& cfg, const std::vector<Ushort>& list)
@@ -75,6 +87,8 @@ WindowRenderer::WindowRenderer(const WindowConfig& cfg, const std::vector<Ushort
 
 	render_window.setVerticalSyncEnabled(cfg.vSync);
 	render_window.setFramerateLimit(cfg.frames_per_second);
+
+	last_draw_call_clock.restart();
 
 	if (cfg.microsecond_delay && !cfg.frames_per_second) {
 		render_window.setFramerateLimit(1000000 / cfg.microsecond_delay);
@@ -85,10 +99,6 @@ WindowRenderer::WindowRenderer(const WindowConfig& cfg, const std::vector<Ushort
 	// In theory - list.size() and max_element should be the same, however I do not trust people.
 	rectangle_dimensions.width  = window_dimensions.width  / to<float>(list.size());
 	rectangle_dimensions.height = window_dimensions.height / to<float>(max_element);
-
-
-
-	DEBUG_TEXT = std::make_unique<sf::Text>();
 	
 	sf::Font font;
 	
@@ -97,21 +107,22 @@ WindowRenderer::WindowRenderer(const WindowConfig& cfg, const std::vector<Ushort
 	}
 	
 
-	DEBUG_TEXT->setFont(font);
-	DEBUG_TEXT->setCharacterSize(16);
-	DEBUG_TEXT->setFillColor(sf::Color::White);
-	DEBUG_TEXT->setStyle(sf::Text::Bold);
-	DEBUG_TEXT->setOutlineThickness(2);
-	DEBUG_TEXT->setPosition(20, 20);
+	DEBUG_TEXT.setFont(font);
+	DEBUG_TEXT.setCharacterSize(16);
+	DEBUG_TEXT.setFillColor(sf::Color::White);
+	DEBUG_TEXT.setStyle(sf::Text::Bold);
+	DEBUG_TEXT.setOutlineThickness(2);
+	DEBUG_TEXT.setPosition(20, 20);
 
+	render_window.setActive(true);
 	create_rectangles(list);
 	start();
 }
 
-void WindowRenderer::draw(const sf::Time& time)
+void WindowRenderer::draw()
 {
 	draw_rectangles();
-	draw_text(time);
+	//draw_text();
 }
 
 void WindowRenderer::swap(const unsigned int& idx1, const unsigned int& idx2)
@@ -121,6 +132,8 @@ void WindowRenderer::swap(const unsigned int& idx1, const unsigned int& idx2)
 
 	rectangles.at(idx1).move(x2 - x1, 0);
 	rectangles.at(idx2).move(x1 - x2, 0);
+
+	std::swap(rectangles.at(idx1), rectangles.at(idx2));
 }
 
 void WindowRenderer::set_value_at(const Ushort& new_value, const unsigned int& idx)

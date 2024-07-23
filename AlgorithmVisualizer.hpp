@@ -42,14 +42,19 @@ public:
 
 
 	// Capacity
-	constexpr ULL  size()  const noexcept;
-	constexpr bool empty() const noexcept;
+	ULL  size()  const noexcept;
+	bool empty() const noexcept;
 
 
 
 
 	void test_read();
+	void set_active(const bool active);
 	void step();
+	void clear(const sf::Color c);
+	void close();
+	void display();
+	bool get_event(sf::Event& e);
 	bool is_window_alive();
 	void poll_event();
 };

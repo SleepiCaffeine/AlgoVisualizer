@@ -62,16 +62,16 @@ void AlgorithmVisualizer::swap(const ULL idx1, const ULL idx2)
 
 	window_renderer.swap(idx1, idx2);
 
-	set_color(idx1, WRITE_COLOR);
-	set_color(idx2, WRITE_COLOR);
+	set_color(idx1, READ_COLOR);
+	set_color(idx2, READ_COLOR);
 }
 
-constexpr ULL AlgorithmVisualizer::size() const noexcept 
+ULL AlgorithmVisualizer::size() const noexcept 
 {
 	return elements.size();
 }
 
-constexpr bool AlgorithmVisualizer::empty() const noexcept
+bool AlgorithmVisualizer::empty() const noexcept
 {
 	return elements.empty();
 }
@@ -81,14 +81,39 @@ void AlgorithmVisualizer::test_read()
 	auto r = get_at(9);
 }
 
+void AlgorithmVisualizer::set_active(const bool active)
+{
+	window_renderer.set_active(active);
+}
+
 void AlgorithmVisualizer::step()
 {
 	window_renderer.step();
 }
 
+void AlgorithmVisualizer::clear(const sf::Color c)
+{
+	window_renderer.clear(c);
+}
+
+void AlgorithmVisualizer::close()
+{
+	window_renderer.close();
+}
+
+void AlgorithmVisualizer::display()
+{
+	window_renderer.display();
+}
+
 void AlgorithmVisualizer::poll_event()
 {
 	window_renderer.poll_event();
+}
+
+bool AlgorithmVisualizer::get_event(sf::Event& e)
+{
+	return window_renderer.get_event(e);
 }
 
 bool AlgorithmVisualizer::is_window_alive() {

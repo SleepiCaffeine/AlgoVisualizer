@@ -54,14 +54,13 @@ struct WindowConfig {
 class WindowRenderer {
 private:
 	sf::RenderWindow render_window;
-	std::unique_ptr<sf::Text> DEBUG_TEXT; // Temporary, used for time measurements
+	sf::Text DEBUG_TEXT; // Temporary, used for time measurements
 	std::vector<sf::RectangleShape> rectangles;
 	sf::Clock last_draw_call_clock;
 
 
 	void draw_rectangles();
-	void draw_text(const sf::Time& time);
-	void run_window();
+	void draw_text();
 
 	void create_rectangles(const std::vector<Ushort>& list);
 public:
@@ -72,10 +71,13 @@ public:
 	WindowRenderer(const WindowConfig& config, const std::vector<Ushort>& list);
 
 	void start();
+	void set_active(const bool active);
 	void poll_event();
-	void sim_mouse_move();
+	void clear(const sf::Color c);
+	void close();
+	void display();
 	void step();
-	void draw(const sf::Time& time);
+	void draw();
 
 	// Swaps the rectangle positions on screen, and in the vector
 	void swap(const unsigned int& idx1, const unsigned int& idx2);
@@ -83,6 +85,7 @@ public:
 	void set_color_at(const unsigned long long idx, const sf::Color c);
 
 	bool is_open() const noexcept;
+	bool get_event(sf::Event& e);
 
 	std::vector<sf::RectangleShape> get_rectangles() const;
 };

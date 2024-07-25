@@ -1,12 +1,12 @@
 ﻿#include "WindowRenderer.hpp"
 #include <format>
-#include <iostream>
+#include <stdexcept>
 
 // Saw this in a "Pezzza's Work" video, thought it looked nice
 template <typename T>
-[[no_discard]] T to(const auto& value) noexcept { return static_cast<T>(value); }
+[[nodiscard]] T to(const auto& value) noexcept { return static_cast<T>(value); }
 
-void WindowRenderer::draw_rectangles()
+void WindowRenderer::draw_rectangles() noexcept
 {
 	for (sf::RectangleShape& rect : rectangles) {
 		render_window.draw(rect);
@@ -20,7 +20,8 @@ void WindowRenderer::draw_text()
 	// Delay: _ microseconds | FPS : 1 million / microseconds
 	const float million = 1000000.f;
 	auto time = last_draw_call_clock.getElapsedTime();
-	DEBUG_TEXT.setString(std::format("Delay: {} us\nFPS: {}", time.asMicroseconds(), million / time.asMicroseconds()));
+	DEBUG_TEXT.setString("Delay: "    + std::to_string(time.asMicroseconds()) +
+						 " us\nFPS: " + std::to_string(to<int>(million / time.asMicroseconds())));
 	render_window.draw(DEBUG_TEXT);
 }
 
@@ -39,6 +40,10 @@ void WindowRenderer::poll_event() {
 		case sf::Event::KeyPressed:
 			if (event.key.code == sf::Keyboard::Escape)
 				render_window.close();
+
+			if (event.key.code == sf::Keyboard::Space) {
+				paused = !paused;
+			}
 			break;
 		default:
 			break;
@@ -46,28 +51,19 @@ void WindowRenderer::poll_event() {
 	}
 }
 
-void WindowRenderer::clear(const sf::Color c)
+void WindowRenderer::clear(const sf::Color c) noexcept
 {
 	render_window.clear(c);
 }
 
-void WindowRenderer::close()
+void WindowRenderer::close() noexcept
 {
 	render_window.close();
 }
 
-void WindowRenderer::display()
+void WindowRenderer::display() noexcept
 {
 	render_window.display();
-}
-
-
-void WindowRenderer::start() {
-	//render_window.setActive(false);
-	//sf::Thread t(&WindowRenderer::run_window, this);
-	//t.launch();
-	return;
-
 }
 
 void WindowRenderer::set_active(const bool active)
@@ -75,15 +71,18 @@ void WindowRenderer::set_active(const bool active)
 	render_window.setActive(active);
 }
 
-void WindowRenderer::step()
+void WindowRenderer::step() noexcept
 {
-
-	draw();
+	if (!paused) {
+		clear(sf::Color::Black);
+		draw();
+		display();
+	}
 }
 
 WindowRenderer::WindowRenderer(const WindowConfig& cfg, const std::vector<Ushort>& list)
 	: render_window(sf::VideoMode(cfg.width, cfg.height), cfg.title, cfg.style),
-	  window_dimensions{to<double>(render_window.getSize().x), to<double>(render_window.getSize().y)} {
+	  window_dimensions{to<float>(render_window.getSize().x), to<float>(render_window.getSize().y)} {
 
 	render_window.setVerticalSyncEnabled(cfg.vSync);
 	render_window.setFramerateLimit(cfg.frames_per_second);
@@ -91,7 +90,8 @@ WindowRenderer::WindowRenderer(const WindowConfig& cfg, const std::vector<Ushort
 	last_draw_call_clock.restart();
 
 	if (cfg.microsecond_delay && !cfg.frames_per_second) {
-		render_window.setFramerateLimit(1000000 / cfg.microsecond_delay);
+		// 1000 us in 1ms ; 1000ms in 1s
+		render_window.setFramerateLimit(1000 * 1000 / cfg.microsecond_delay);
 	}
 
 
@@ -100,14 +100,13 @@ WindowRenderer::WindowRenderer(const WindowConfig& cfg, const std::vector<Ushort
 	rectangle_dimensions.width  = window_dimensions.width  / to<float>(list.size());
 	rectangle_dimensions.height = window_dimensions.height / to<float>(max_element);
 	
-	sf::Font font;
 	
-	if (!font.loadFromFile("Minecraft.ttf")) {
+	if (!text_font.loadFromFile("Minecraft.ttf")) {
 		throw std::runtime_error("Failed to load font");
 	}
 	
 
-	DEBUG_TEXT.setFont(font);
+	DEBUG_TEXT.setFont(text_font);
 	DEBUG_TEXT.setCharacterSize(16);
 	DEBUG_TEXT.setFillColor(sf::Color::White);
 	DEBUG_TEXT.setStyle(sf::Text::Bold);
@@ -116,13 +115,13 @@ WindowRenderer::WindowRenderer(const WindowConfig& cfg, const std::vector<Ushort
 
 	render_window.setActive(true);
 	create_rectangles(list);
-	start();
 }
 
-void WindowRenderer::draw()
+void WindowRenderer::draw() noexcept
 {
 	draw_rectangles();
-	//draw_text();
+	draw_text();
+	last_draw_call_clock.restart();
 }
 
 void WindowRenderer::swap(const unsigned int& idx1, const unsigned int& idx2)
@@ -138,8 +137,11 @@ void WindowRenderer::swap(const unsigned int& idx1, const unsigned int& idx2)
 
 void WindowRenderer::set_value_at(const Ushort& new_value, const unsigned int& idx)
 {
-	float new_height = new_value * rectangle_dimensions.height;
-	float width = rectangle_dimensions.width;
+	float new_height = to<float>(new_value) * rectangle_dimensions.height;
+	float new_ypos   = window_dimensions.height - new_height;
+	float width      = rectangle_dimensions.width;
+
+	rectangles.at(idx).setPosition(width * idx, new_ypos);
 	rectangles.at(idx).setSize({ width, new_height });
 }
 

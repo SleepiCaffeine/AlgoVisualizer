@@ -21,10 +21,7 @@
     <ClCompile Include="WindowRenderer.cpp">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="AlgorithmVisualizer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SortingElement.cpp">
+    <ClCompile Include="VisualArray.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -32,10 +29,7 @@
     <ClInclude Include="WindowRenderer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AlgorithmVisualizer.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SortingElement.hpp">
+    <ClInclude Include="VisualArray.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -173,6 +173,8 @@ void WindowRenderer::create_rectangles(const std::vector<Ushort>& list) {
 		shape.setSize({ to<float>(rectangle_dimensions.width), height });
 		shape.setFillColor(sf::Color::White);
 		shape.setPosition(x_pos, y_pos);
+		shape.setOutlineColor(sf::Color::Black);
+		shape.setOutlineThickness(1);
 		rectangles.emplace_back(shape);
 	}
 }

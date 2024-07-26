@@ -3,13 +3,11 @@
 #include <numeric> // std::iota
 #include <algorithm>
 #include <random>
-#include <ranges>
 #include <thread>
 #include <utility>
-#include <mutex>
+#include <atomic>
 
-using ULL = unsigned long long;
-bool can_draw = false;
+std::atomic<bool> can_draw = false;
 
 
 
@@ -75,7 +73,6 @@ static void rec_quickSort(VisualArray& va, const unsigned int low, const unsigne
 
     va.set_draw(false);
 }
-
 
 static void quickSort(VisualArray& va, const unsigned int low, const unsigned int high) {
     rec_quickSort(va, low, high);
@@ -145,14 +142,14 @@ void mergeSort(VisualArray& va, const unsigned int offset = 0) noexcept {
 int main()
 {
     // Create a randomized array
-    std::vector<unsigned short> arr(10);
+    std::vector<unsigned short> arr(300);
     std::iota(arr.begin(), arr.end(), 1);
     std::shuffle(arr.begin(), arr.end(), std::mt19937{std::random_device{}()});
     
 
     // Set window configuration (optional) & Creating WindowRenderer
     WindowConfig wc;
-    wc.setFramesPerSecond(5);
+    wc.setFramesPerSecond(0);
     wc.setOutline(false);
     auto wr = std::make_shared<WindowRenderer>(wc, arr);
 

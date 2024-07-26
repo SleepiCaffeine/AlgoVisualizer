@@ -86,6 +86,10 @@ private:
 	size_t treads{0};
 	size_t tswaps{0};
 
+	// Sounds
+	sf::SoundBuffer sound_buf;
+	std::vector<sf::Sound> sounds;
+
 	// Dimensions for reference
 	Dimensions rectangle_dimensions;
 	Dimensions window_dimensions;
@@ -107,7 +111,7 @@ public:
 	void step() noexcept;
 	void draw() noexcept;
 
-	enum Statistic {READ, WRITE, SWAP, NONE};
+	enum struct Statistic {READ, WRITE, SWAP, NONE};
 	void increment_statistic(const Statistic& s) noexcept;
 
 	// Swaps the rectangle positions on screen, and in the vector
@@ -117,6 +121,8 @@ public:
 
 	bool is_open() const noexcept;
 	bool get_event(sf::Event& e);
+
+	void add_sound(const Ushort& value) noexcept;
 
 	std::vector<sf::RectangleShape> get_rectangles() const;
 };

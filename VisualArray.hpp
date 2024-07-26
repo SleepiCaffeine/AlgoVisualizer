@@ -16,6 +16,7 @@ private:
 
 	void within_bounds(const size_t idx) const;
 	void change_color(const size_t idx, const sf::Color& c) const noexcept;
+	void play_sound(const sf::Uint16& value) const noexcept;
 
 public:
 	VisualArray(const std::shared_ptr<WindowRenderer>& wPtr, const size_t offset) noexcept;

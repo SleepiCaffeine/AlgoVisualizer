@@ -1,6 +1,8 @@
 ﻿#include "WindowRenderer.hpp"
 #include <format>
 #include <stdexcept>
+#include <algorithm>
+
 
 // Saw this in a "Pezzza's Work" video, thought it looked nice
 template <typename T>
@@ -45,6 +47,32 @@ void WindowRenderer::draw_text()
 
 bool WindowRenderer::get_event(sf::Event& e) {
 	return render_window.pollEvent(e);
+}
+
+
+
+#define MAX_SOUNDS 150
+void WindowRenderer::add_sound(const Ushort& value) noexcept
+{
+	const float MIN_PITCH = 1e-5;
+
+	static int counter = 0;
+
+	Ushort approx_max_element = window_dimensions.height / rectangle_dimensions.height;
+	float normalized_position = value / approx_max_element;
+	float multiplied_position = normalized_position * 2;
+
+	multiplied_position = std::max(multiplied_position, MIN_PITCH);
+
+
+
+	sf::Sound new_sound(sound_buf);
+	sounds.at(counter) = new_sound;
+	sounds.at(counter).play();
+	sounds.at(counter).setPitch(multiplied_position);
+
+	++counter;
+	counter %= MAX_SOUNDS;
 }
 
 void WindowRenderer::poll_event() {
@@ -101,6 +129,7 @@ WindowRenderer::WindowRenderer(const WindowConfig& cfg, const std::vector<Ushort
 	: render_window(sf::VideoMode(cfg.width, cfg.height), cfg.title, cfg.style),
 	  window_dimensions{to<float>(render_window.getSize().x), to<float>(render_window.getSize().y)} {
 
+	// Window configurations
 	render_window.setVerticalSyncEnabled(cfg.vSync);
 	render_window.setFramerateLimit(cfg.frames_per_second);
 
@@ -112,12 +141,22 @@ WindowRenderer::WindowRenderer(const WindowConfig& cfg, const std::vector<Ushort
 	}
 
 
-	Ushort max_element = *std::ranges::max_element(list.begin(), list.end());
+	// Audio
+	sounds = std::vector<sf::Sound>(MAX_SOUNDS);
+	if (!sound_buf.loadFromFile("read_sound.ogg")) {
+		throw std::runtime_error("Failed to load audio file");
+	}
+
+
+	// Rectangle Dimensions
+	Ushort max_element = *std::max_element(list.begin(), list.end());
 	// In theory - list.size() and max_element should be the same, however I do not trust people.
 	rectangle_dimensions.width  = window_dimensions.width  / to<float>(list.size());
 	rectangle_dimensions.height = window_dimensions.height / to<float>(max_element);
 	
 	
+
+	// Text stuff
 	if (!text_font.loadFromFile("Minecraft.ttf")) {
 		throw std::system_error::exception("Failed to load font");
 	}

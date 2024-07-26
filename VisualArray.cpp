@@ -14,8 +14,12 @@ void VisualArray::swap(const size_t idx1, const size_t idx2)
 	std::swap(elements.at(idx1), elements.at(idx2));
 
 	window_ptr.get()->swap(idx1 + offset, idx2 + offset);
+
 	change_color(idx1, READ_COLOR);
 	change_color(idx2, READ_COLOR);
+
+	play_sound(elements.at(idx1));
+	play_sound(elements.at(idx2));
 }
 
 // Copies values [begin; end)
@@ -74,6 +78,11 @@ void VisualArray::change_color(const size_t idx, const sf::Color& c) const noexc
 		window_ptr.get()->set_color_at(idx + offset + deleted_elements, c);
 }
 
+void VisualArray::play_sound(const sf::Uint16& value) const noexcept
+{
+	window_ptr.get()->add_sound(value);
+}
+
 VisualArray::VisualArray(const std::shared_ptr<WindowRenderer>& wPtr, const size_t off) noexcept
 	: window_ptr{ wPtr }, offset(off)
 { }
@@ -95,6 +104,7 @@ sf::Uint16 VisualArray::get_at(const size_t idx) const
 {
 	within_bounds(idx);
 	window_ptr->increment_statistic(WindowRenderer::Statistic::READ);
+	play_sound(elements.at(idx));
 	change_color(idx, READ_COLOR);
 	return elements.at(idx);
 }
@@ -104,6 +114,7 @@ void VisualArray::set_at(const size_t idx, const sf::Uint16& value)
 	within_bounds(idx);
 	window_ptr->increment_statistic(WindowRenderer::Statistic::WRITE);
 	change_color(idx, WRITE_COLOR);
+	play_sound(value);
 	elements.at(idx) = value;
 }
 
@@ -111,6 +122,7 @@ sf::Uint16 VisualArray::front() const noexcept
 {
 	window_ptr->increment_statistic(WindowRenderer::Statistic::READ);
 	change_color(0, READ_COLOR);
+	play_sound(elements.front());
 	return elements.front();
 }
 
@@ -118,6 +130,7 @@ sf::Uint16 VisualArray::back() const noexcept
 {
 	window_ptr->increment_statistic(WindowRenderer::Statistic::READ);
 	change_color(elements.size() - 1, READ_COLOR);
+	play_sound(elements.back());
 	return elements.back();
 }
 
@@ -136,6 +149,7 @@ void VisualArray::push_back(const sf::Uint16& e) noexcept
 	elements.push_back(e);
 	window_ptr->increment_statistic(WindowRenderer::Statistic::WRITE);
 	window_ptr->set_value_at(elements.back(), offset + (elements.size() - 1));
+	play_sound(e);
 	change_color(elements.size() - 1, WRITE_COLOR);
 }
 

@@ -31,6 +31,7 @@ void bubblesort(VisualArray& va) {
 
 unsigned int partition(VisualArray& va, const unsigned int low, const unsigned int high) {
     unsigned int pivot = va.get_at(low);
+    va.set_draw(true);
     va.step();
 
 
@@ -59,18 +60,28 @@ unsigned int partition(VisualArray& va, const unsigned int low, const unsigned i
         va.step();
     }
 
+    va.set_draw(false);
+
 }
 
-static void quickSort(VisualArray& va, const unsigned int low, const unsigned int high) {
+static void rec_quickSort(VisualArray& va, const unsigned int low, const unsigned int high) {
 
     if (low >= high)
         return;
 
     unsigned int pivot = partition(va, low, high);
-    quickSort(va, low, pivot);
-    quickSort(va, pivot + 1, high);
+    rec_quickSort(va, low, pivot);
+    rec_quickSort(va, pivot + 1, high);
+
+    va.set_draw(false);
 }
 
+
+static void quickSort(VisualArray& va, const unsigned int low, const unsigned int high) {
+    rec_quickSort(va, low, high);
+    va.set_draw(false);
+    can_draw = true;
+}
 
 VisualArray merge(VisualArray& l, VisualArray& r, const unsigned int offset) noexcept {
 
@@ -109,7 +120,7 @@ VisualArray merge(VisualArray& l, VisualArray& r, const unsigned int offset) noe
     return result;
 }
 
-void rec_mergeSort(VisualArray& va, const unsigned int offset = 0) noexcept {
+void rec_mergeSort(VisualArray& va, const unsigned int offset) noexcept {
     if (va.size() == 1)
         return;
     
@@ -134,14 +145,15 @@ void mergeSort(VisualArray& va, const unsigned int offset = 0) noexcept {
 int main()
 {
     // Create a randomized array
-    std::vector<unsigned short> arr(100);
+    std::vector<unsigned short> arr(10);
     std::iota(arr.begin(), arr.end(), 1);
     std::shuffle(arr.begin(), arr.end(), std::mt19937{std::random_device{}()});
     
 
     // Set window configuration (optional) & Creating WindowRenderer
     WindowConfig wc;
-    wc.setFramesPerSecond(100);
+    wc.setFramesPerSecond(5);
+    wc.setOutline(false);
     auto wr = std::make_shared<WindowRenderer>(wc, arr);
 
     // Creating the visual array, and copying over the randomized array
@@ -151,7 +163,7 @@ int main()
 
     // Deactivating OpenGL resource, to pass off to thread
     wr.get()->set_active(false);
-    std::jthread t(mergeSort, std::ref(vis_array), 0);
+    std::jthread t(quickSort, std::ref(vis_array), 0, vis_array.size() - 1);
     // Removing draw functionality
 
 

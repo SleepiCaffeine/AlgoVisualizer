@@ -10,7 +10,7 @@ void VisualArray::swap(const size_t idx1, const size_t idx2)
 {
 	within_bounds(idx1);
 	within_bounds(idx2);
-
+	window_ptr->increment_statistic(WindowRenderer::Statistic::SWAP);
 	std::swap(elements.at(idx1), elements.at(idx2));
 
 	window_ptr.get()->swap(idx1 + offset, idx2 + offset);
@@ -94,6 +94,7 @@ const std::shared_ptr<WindowRenderer>& VisualArray::get_wPtr() const noexcept
 sf::Uint16 VisualArray::get_at(const size_t idx) const
 {
 	within_bounds(idx);
+	window_ptr->increment_statistic(WindowRenderer::Statistic::READ);
 	change_color(idx, READ_COLOR);
 	return elements.at(idx);
 }
@@ -101,18 +102,21 @@ sf::Uint16 VisualArray::get_at(const size_t idx) const
 void VisualArray::set_at(const size_t idx, const sf::Uint16& value)
 {
 	within_bounds(idx);
+	window_ptr->increment_statistic(WindowRenderer::Statistic::WRITE);
 	change_color(idx, WRITE_COLOR);
 	elements.at(idx) = value;
 }
 
 sf::Uint16 VisualArray::front() const noexcept
 {
+	window_ptr->increment_statistic(WindowRenderer::Statistic::READ);
 	change_color(0, READ_COLOR);
 	return elements.front();
 }
 
 sf::Uint16 VisualArray::back() const noexcept
 {
+	window_ptr->increment_statistic(WindowRenderer::Statistic::READ);
 	change_color(elements.size() - 1, READ_COLOR);
 	return elements.back();
 }
@@ -130,6 +134,7 @@ bool VisualArray::empty() const noexcept
 void VisualArray::push_back(const sf::Uint16& e) noexcept
 {
 	elements.push_back(e);
+	window_ptr->increment_statistic(WindowRenderer::Statistic::WRITE);
 	window_ptr->set_value_at(elements.back(), offset + (elements.size() - 1));
 	change_color(elements.size() - 1, WRITE_COLOR);
 }

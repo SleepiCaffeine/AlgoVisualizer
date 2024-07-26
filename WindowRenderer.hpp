@@ -4,6 +4,7 @@
 #include "SFML/Audio.hpp"
 
 #include <list>
+#include <chrono>
 
 using Ushort = unsigned short;
 
@@ -14,21 +15,36 @@ struct Dimensions {
 
 
 struct WindowConfig {
+
 	Ushort height = 900;
 	Ushort width = 1600;
+
+	Ushort old_height = height;
+	Ushort old_width = width;
+
 	Ushort frames_per_second = 0;
 	Ushort microsecond_delay = 0;
 	sf::String title = "Sorting Algorithm Visualizer";
 	sf::Uint32 style = sf::Style::Default;
 	bool vSync = false;
+	bool add_outline = true;
 
 	void setFullscreen(const bool fullscreen = true) noexcept {
-		if (fullscreen)
+		if (fullscreen) {
 			style |= sf::Style::Fullscreen;
-		else
+			height = 1080;
+			width  = 1920;
+		}
+		else {
+			height = old_height;
+			width = old_width;
 			style &= ~sf::Style::Fullscreen;
+		}
 	}
 	void setScreenSize(const Ushort w, Ushort h) noexcept {
+		old_width = width;
+		old_height = height;
+
 		width = w;
 		height = h;
 	}
@@ -47,16 +63,30 @@ struct WindowConfig {
 	void setTitle(const sf::String& t) noexcept {
 		title = t;
 	}
+
+	void setOutline(const bool active = true) noexcept {
+		add_outline = active;
+	}
 };
 
 class WindowRenderer {
 private:
 	bool paused = false;
 	sf::RenderWindow render_window;
+
+	// On screen stuff
 	sf::Font text_font;
-	sf::Text DEBUG_TEXT; // Temporary, used for time measurements
+	sf::Text timing_text;	// text that displays delay+fps+total
+	sf::Text stats_text;	// text that displays reads+writes+swaps
 	std::vector<sf::RectangleShape> rectangles;
-	sf::Clock last_draw_call_clock;
+	sf::Clock last_draw_call;
+
+	// Extra text data
+	size_t twrites{0};
+	size_t treads{0};
+	size_t tswaps{0};
+
+	// Dimensions for reference
 	Dimensions rectangle_dimensions;
 	Dimensions window_dimensions;
 
@@ -64,7 +94,7 @@ private:
 	void draw_rectangles() noexcept;
 	void draw_text();
 
-	void create_rectangles(const std::vector<Ushort>& list);
+	void create_rectangles(const std::vector<Ushort>& list, const bool with_outline = true);
 public:
 
 	WindowRenderer(const WindowConfig& config, const std::vector<Ushort>& list);
@@ -76,6 +106,9 @@ public:
 	void display() noexcept;
 	void step() noexcept;
 	void draw() noexcept;
+
+	enum Statistic {READ, WRITE, SWAP, NONE};
+	void increment_statistic(const Statistic& s) noexcept;
 
 	// Swaps the rectangle positions on screen, and in the vector
 	void swap(const unsigned int& idx1, const unsigned int& idx2);

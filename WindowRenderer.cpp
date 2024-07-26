@@ -16,13 +16,30 @@ void WindowRenderer::draw_rectangles() noexcept
 
 void WindowRenderer::draw_text()
 {
+	// STATS_TEXT
+	stats_text.setString("Reads: " + std::to_string(treads) +
+		"\nWrites: " + std::to_string(twrites) +
+		"\nSwaps: " + std::to_string(tswaps));
+
+	render_window.draw(stats_text);
+
+
+	// TIMING_TEXT
+	static size_t      ms_total = 0;
+
+	// Please God explain, why does the whole code break
+	// If this SPECIFIC VARIABLE ISN'T A FLOAT?!
+	// God has forsaken us, forgotten us, left us to rot
+	const float ms_in_1s = 1000.f;
+
+	const unsigned long time_between_calls = last_draw_call.getElapsedTime().asMilliseconds();
+	ms_total += time_between_calls;
+
 	// Setting the string in such an ugly way shaved off about 40% of time between draw calls...
-	// Delay: _ microseconds | FPS : 1 million / microseconds
-	const float million = 1000000.f;
-	auto time = last_draw_call_clock.getElapsedTime();
-	DEBUG_TEXT.setString("Delay: "    + std::to_string(time.asMicroseconds()) +
-						 " us\nFPS: " + std::to_string(to<int>(million / time.asMicroseconds())));
-	render_window.draw(DEBUG_TEXT);
+	timing_text.setString("Delay: " + std::to_string(time_between_calls) +
+		" ms\nFPS: " + std::to_string(to<int>(ms_in_1s / time_between_calls)) +
+		"\nTotal Time: " + std::to_string(ms_total / 1000) + "s");
+	render_window.draw(timing_text);
 }
 
 
@@ -87,7 +104,7 @@ WindowRenderer::WindowRenderer(const WindowConfig& cfg, const std::vector<Ushort
 	render_window.setVerticalSyncEnabled(cfg.vSync);
 	render_window.setFramerateLimit(cfg.frames_per_second);
 
-	last_draw_call_clock.restart();
+	last_draw_call.restart();
 
 	if (cfg.microsecond_delay && !cfg.frames_per_second) {
 		// 1000 us in 1ms ; 1000ms in 1s
@@ -102,26 +119,47 @@ WindowRenderer::WindowRenderer(const WindowConfig& cfg, const std::vector<Ushort
 	
 	
 	if (!text_font.loadFromFile("Minecraft.ttf")) {
-		throw std::runtime_error("Failed to load font");
+		throw std::system_error::exception("Failed to load font");
 	}
 	
 
-	DEBUG_TEXT.setFont(text_font);
-	DEBUG_TEXT.setCharacterSize(16);
-	DEBUG_TEXT.setFillColor(sf::Color::White);
-	DEBUG_TEXT.setStyle(sf::Text::Bold);
-	DEBUG_TEXT.setOutlineThickness(2);
-	DEBUG_TEXT.setPosition(20, 20);
+	timing_text.setFont(text_font);
+	timing_text.setCharacterSize(16);
+	timing_text.setFillColor(sf::Color::White);
+	timing_text.setStyle(sf::Text::Bold);
+	timing_text.setOutlineThickness(2);
+	timing_text.setPosition(20, 20);
+
+	stats_text = sf::Text(timing_text);
+	stats_text.setPosition(180, 20);
+
 
 	render_window.setActive(true);
-	create_rectangles(list);
+	create_rectangles(list, cfg.add_outline);
 }
 
 void WindowRenderer::draw() noexcept
 {
 	draw_rectangles();
 	draw_text();
-	last_draw_call_clock.restart();
+	last_draw_call.restart();
+}
+
+void WindowRenderer::increment_statistic(const Statistic& s) noexcept
+{
+	switch (s) {
+	case Statistic::READ:
+		++treads;
+		break;
+	case Statistic::WRITE:
+		++twrites;
+		break;
+	case Statistic::SWAP:
+		++tswaps;
+		break;
+	default:
+		break;
+	}
 }
 
 void WindowRenderer::swap(const unsigned int& idx1, const unsigned int& idx2)
@@ -160,7 +198,7 @@ std::vector<sf::RectangleShape> WindowRenderer::get_rectangles() const
 	return rectangles;
 }
 
-void WindowRenderer::create_rectangles(const std::vector<Ushort>& list) {
+void WindowRenderer::create_rectangles(const std::vector<Ushort>& list, const bool with_outline) {
 	rectangles.clear();
 	for (const Ushort& element : list) {
 
@@ -173,8 +211,10 @@ void WindowRenderer::create_rectangles(const std::vector<Ushort>& list) {
 		shape.setSize({ to<float>(rectangle_dimensions.width), height });
 		shape.setFillColor(sf::Color::White);
 		shape.setPosition(x_pos, y_pos);
-		shape.setOutlineColor(sf::Color::Black);
-		shape.setOutlineThickness(1);
+		if (with_outline) {
+			shape.setOutlineColor(sf::Color::Black);
+			shape.setOutlineThickness(1);
+		}
 		rectangles.emplace_back(shape);
 	}
 }

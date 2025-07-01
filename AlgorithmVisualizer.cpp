@@ -1,67 +1,122 @@
 #include "AlgorithmVisualizer.hpp"
+#include <thread>
+#include <mutex>
 
-AlgorithmVisualizer::AlgorithmVisualizer(const sf::VideoMode video_mode, const sf::String& audio_file_name)
-	: window_renderer(video_mode, 16, "Algoithm Visualizer", audio_file_name), sorting_method(NONE)
-{ }
 
-void AlgorithmVisualizer::start()
+
+using ULL = unsigned long long;
+
+inline void AlgorithmVisualizer::set_color(const ULL& idx, const sf::Color c)
 {
-	while (window_renderer.is_window_alive())
-	{
+	window_renderer.set_color_at(idx, c);
+}
 
-		switch (sorting_method) {
-		case SortingMethod::NONE:
-			std::abort();
-
-		case SortingMethod::BubbleSort:
-
-		for (int i = 0; i < list.size() - 1; i++) {
-			for (int j = 0; j < list.size() - 1 - i; j++) {
-
-				window_renderer.set_rectangle_color(j, sf::Color::Green);
-				window_renderer.set_rectangle_color(j + 1, sf::Color::Green);
-				window_renderer.step();
-
-				// if left value > right value
-				if (list.at(j) > list.at(j + 1)) {
-
-					window_renderer.swap_rectangle_positions(j, j + 1);
-					window_renderer.step();
-					std::swap(list.at(j), list.at(j + 1));
-					window_renderer.add_sound(list.at(j + 1));
-					window_renderer.add_sound(list.at(j));
-				}
-			}
-		}
-		break;
-
-		case SortingMethod::MergeSort:
-			std::abort();
-
-		case SortingMethod::QuickSort:
-			std::abort();
-		}
+AlgorithmVisualizer::AlgorithmVisualizer(const std::vector<Ushort>& arr) :
+	window_renderer(WindowConfig(), arr)
+{
+	auto rectangles = window_renderer.get_rectangles();
+	for (ULL i = 0; i < arr.size(); i++) {
+		elements.push_back({arr.at(i), rectangles.at(i) });
 	}
 }
 
-void AlgorithmVisualizer::set_title(const std::string& title)
+const Ushort& AlgorithmVisualizer::get_at(const ULL index)
 {
-	window_renderer.set_title(title);
+	set_color(index, sf::Color::Green);
+
+	return elements.at(index).val;
 }
 
-void AlgorithmVisualizer::set_delay(const unsigned int delay)
+void AlgorithmVisualizer::set_at(const ULL index, const Ushort& value)
 {
-	window_renderer.set_delay(delay);
+	set_color(index, WRITE_COLOR);
+	elements.at(index).val = value;
+	window_renderer.set_value_at(value, index);
 }
 
-void AlgorithmVisualizer::initialize_list(const std::vector<int>& l)
+const Ushort& AlgorithmVisualizer::front()
 {
-	window_renderer.initialize(l);
-	list = l;
+	set_color(elements.size() - 1, READ_COLOR);
+	return elements.front().val;
 }
 
-void AlgorithmVisualizer::set_sorting_method(SortingMethod method)
+const Ushort& AlgorithmVisualizer::back()
 {
-	sorting_method = method;
+	set_color(elements.size() - 1, READ_COLOR);
+	return elements.back().val;
 }
 
+std::vector<Ushort> AlgorithmVisualizer::to_vector() const
+{
+	std::vector<Ushort> vec;
+
+	for (const auto& e : elements)
+		vec.push_back(e.val);
+
+	return vec;
+}
+
+void AlgorithmVisualizer::swap(const ULL idx1, const ULL idx2)
+{
+	using std::swap;
+	swap(elements.at(idx1), elements.at(idx2));
+
+	window_renderer.swap(idx1, idx2);
+
+	set_color(idx1, READ_COLOR);
+	set_color(idx2, READ_COLOR);
+}
+
+ULL AlgorithmVisualizer::size() const noexcept 
+{
+	return elements.size();
+}
+
+bool AlgorithmVisualizer::empty() const noexcept
+{
+	return elements.empty();
+}
+
+void AlgorithmVisualizer::test_read()
+{
+	auto r = get_at(9);
+}
+
+void AlgorithmVisualizer::set_active(const bool active)
+{
+	window_renderer.set_active(active);
+}
+
+void AlgorithmVisualizer::step()
+{
+	window_renderer.step();
+}
+
+void AlgorithmVisualizer::clear(const sf::Color c)
+{
+	window_renderer.clear(c);
+}
+
+void AlgorithmVisualizer::close()
+{
+	window_renderer.close();
+}
+
+void AlgorithmVisualizer::display()
+{
+	window_renderer.display();
+}
+
+void AlgorithmVisualizer::poll_event()
+{
+	window_renderer.poll_event();
+}
+
+bool AlgorithmVisualizer::get_event(sf::Event& e)
+{
+	return window_renderer.get_event(e);
+}
+
+bool AlgorithmVisualizer::is_window_alive() {
+	return window_renderer.is_open();
+}

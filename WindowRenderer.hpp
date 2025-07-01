@@ -23,7 +23,7 @@ struct WindowConfig {
 	Ushort old_width = width;
 
 	Ushort frames_per_second = 0;
-	Ushort microsecond_delay = 0;
+	size_t millisecond_delay = 0;
 	sf::String title = "Sorting Algorithm Visualizer";
 	sf::Uint32 style = sf::Style::Default;
 	bool vSync = false;
@@ -54,8 +54,8 @@ struct WindowConfig {
 		frames_per_second = fps;
 	}
 	// A more precise way to control FPS, makes the thread sleep
-	void setMicrosecondDelay(const Ushort us) noexcept {
-		microsecond_delay = us;
+	void setMillisecondDelay(const size_t ms) noexcept {
+		millisecond_delay = ms;
 	}
 	void setVSync(const bool vsync = true) noexcept {
 		vSync = vsync;
@@ -88,7 +88,7 @@ private:
 
 	// Sounds
 	sf::SoundBuffer sound_buf;
-	std::vector<sf::Sound> sounds;
+	std::list<sf::Sound> sounds;
 
 	// Dimensions for reference
 	Dimensions rectangle_dimensions;
@@ -98,10 +98,11 @@ private:
 	void draw_rectangles() noexcept;
 	void draw_text();
 
-	void create_rectangles(const std::vector<Ushort>& list, const bool with_outline = true);
+	void create_rectangles(const std::vector<size_t>& list, const bool with_outline = true);
+	void delete_sounds() noexcept;
 public:
 
-	WindowRenderer(const WindowConfig& config, const std::vector<Ushort>& list);
+	WindowRenderer(const WindowConfig& config, const std::vector<size_t>& list);
 
 	void set_active(const bool active);
 	void poll_event();
@@ -115,14 +116,14 @@ public:
 	void increment_statistic(const Statistic& s) noexcept;
 
 	// Swaps the rectangle positions on screen, and in the vector
-	void swap(const unsigned int& idx1, const unsigned int& idx2);
-	void set_value_at(const Ushort& new_value, const unsigned int& idx);
-	void set_color_at(const unsigned long long idx, const sf::Color c);
+	void swap(const size_t& idx1, const size_t& idx2);
+	void set_value_at(const size_t& new_value, const size_t& idx);
+	void set_color_at(const size_t idx, const sf::Color c);
 
 	bool is_open() const noexcept;
 	bool get_event(sf::Event& e);
 
-	void add_sound(const Ushort& value) noexcept;
+	void add_sound(const size_t& value) noexcept;
 
 	std::vector<sf::RectangleShape> get_rectangles() const;
 };

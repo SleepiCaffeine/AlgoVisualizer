@@ -23,6 +23,7 @@ AlgorithmVisualizer::AlgorithmVisualizer(const std::vector<Ushort>& arr) :
 const Ushort& AlgorithmVisualizer::get_at(const ULL index)
 {
 	set_color(index, sf::Color::Green);
+
 	return elements.at(index).val;
 }
 

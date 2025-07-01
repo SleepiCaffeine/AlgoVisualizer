@@ -10,6 +10,7 @@ template <typename T>
 
 void WindowRenderer::draw_rectangles() noexcept
 {
+
 	for (sf::RectangleShape& rect : rectangles) {
 		render_window.draw(rect);
 		rect.setFillColor(sf::Color::White);
@@ -35,11 +36,14 @@ void WindowRenderer::draw_text()
 	const float ms_in_1s = 1000.f;
 
 	const unsigned long time_between_calls = last_draw_call.getElapsedTime().asMilliseconds();
+	
+	// There are some cases when time_between_calls is 0, hence a division by 0 error
+	const unsigned int FPS = (time_between_calls) ? ms_in_1s / time_between_calls : ms_in_1s / 1;
 	ms_total += time_between_calls;
 
 	// Setting the string in such an ugly way shaved off about 40% of time between draw calls...
 	timing_text.setString("Delay: " + std::to_string(time_between_calls) +
-		" ms\nFPS: " + std::to_string(to<int>(ms_in_1s / time_between_calls)) +
+		" ms\nFPS: " + std::to_string(FPS) +
 		"\nTotal Time: " + std::to_string(ms_total / 1000) + "s");
 	render_window.draw(timing_text);
 }
@@ -52,24 +56,23 @@ bool WindowRenderer::get_event(sf::Event& e) {
 
 
 #define MAX_SOUNDS 150
-void WindowRenderer::add_sound(const Ushort& value) noexcept
+void WindowRenderer::add_sound(const size_t& value) noexcept
 {
 	const float MIN_PITCH = 1e-5;
+	static size_t counter = 0;
 
-	static int counter = 0;
-
-	Ushort approx_max_element = window_dimensions.height / rectangle_dimensions.height;
+	float approx_max_element  = window_dimensions.height / rectangle_dimensions.height;
 	float normalized_position = value / approx_max_element;
 	float multiplied_position = normalized_position * 2;
 
 	multiplied_position = std::max(multiplied_position, MIN_PITCH);
 
+	auto iter = sounds.begin();
+	std::advance(iter, counter);
 
-
-	sf::Sound new_sound(sound_buf);
-	sounds.at(counter) = new_sound;
-	sounds.at(counter).play();
-	sounds.at(counter).setPitch(multiplied_position);
+	iter->stop();
+	iter->setPitch(multiplied_position);
+	iter->play();
 
 	++counter;
 	counter %= MAX_SOUNDS;
@@ -81,11 +84,13 @@ void WindowRenderer::poll_event() {
 		switch (event.type) {
 		case sf::Event::Closed:
 			render_window.close();
+			delete_sounds();
 			break;
 		case sf::Event::KeyPressed:
-			if (event.key.code == sf::Keyboard::Escape)
+			if (event.key.code == sf::Keyboard::Escape) {
 				render_window.close();
-
+				delete_sounds();
+			}
 			if (event.key.code == sf::Keyboard::Space) {
 				paused = !paused;
 			}
@@ -125,7 +130,8 @@ void WindowRenderer::step() noexcept
 	}
 }
 
-WindowRenderer::WindowRenderer(const WindowConfig& cfg, const std::vector<Ushort>& list)
+#define SOUND_VOLUME 10
+WindowRenderer::WindowRenderer(const WindowConfig& cfg, const std::vector<size_t>& list)
 	: render_window(sf::VideoMode(cfg.width, cfg.height), cfg.title, cfg.style),
 	  window_dimensions{to<float>(render_window.getSize().x), to<float>(render_window.getSize().y)} {
 
@@ -135,21 +141,23 @@ WindowRenderer::WindowRenderer(const WindowConfig& cfg, const std::vector<Ushort
 
 	last_draw_call.restart();
 
-	if (cfg.microsecond_delay && !cfg.frames_per_second) {
-		// 1000 us in 1ms ; 1000ms in 1s
-		render_window.setFramerateLimit(1000 * 1000 / cfg.microsecond_delay);
+	if (cfg.millisecond_delay && !cfg.frames_per_second) {
+		// 1000ms in 1s
+		render_window.setFramerateLimit( 1000 / cfg.millisecond_delay);
 	}
 
 
 	// Audio
-	sounds = std::vector<sf::Sound>(MAX_SOUNDS);
-	if (!sound_buf.loadFromFile("read_sound.ogg")) {
+	if (!sound_buf.loadFromFile("read_sound2.ogg")) {
 		throw std::runtime_error("Failed to load audio file");
 	}
+	sf::Sound sound(sound_buf);
+	sound.setVolume(SOUND_VOLUME);
+	sounds = std::list<sf::Sound>(MAX_SOUNDS, sound);
 
 
 	// Rectangle Dimensions
-	Ushort max_element = *std::max_element(list.begin(), list.end());
+	size_t max_element = *std::max_element(list.begin(), list.end());
 	// In theory - list.size() and max_element should be the same, however I do not trust people.
 	rectangle_dimensions.width  = window_dimensions.width  / to<float>(list.size());
 	rectangle_dimensions.height = window_dimensions.height / to<float>(max_element);
@@ -201,7 +209,7 @@ void WindowRenderer::increment_statistic(const Statistic& s) noexcept
 	}
 }
 
-void WindowRenderer::swap(const unsigned int& idx1, const unsigned int& idx2)
+void WindowRenderer::swap(const size_t& idx1, const size_t& idx2)
 {
 	const float x1 = rectangles.at(idx1).getPosition().x;
 	const float x2 = rectangles.at(idx2).getPosition().x;
@@ -212,7 +220,7 @@ void WindowRenderer::swap(const unsigned int& idx1, const unsigned int& idx2)
 	std::swap(rectangles.at(idx1), rectangles.at(idx2));
 }
 
-void WindowRenderer::set_value_at(const Ushort& new_value, const unsigned int& idx)
+void WindowRenderer::set_value_at(const size_t& new_value, const size_t& idx)
 {
 	float new_height = to<float>(new_value) * rectangle_dimensions.height;
 	float new_ypos   = window_dimensions.height - new_height;
@@ -222,7 +230,7 @@ void WindowRenderer::set_value_at(const Ushort& new_value, const unsigned int& i
 	rectangles.at(idx).setSize({ width, new_height });
 }
 
-void WindowRenderer::set_color_at(const unsigned long long idx, const sf::Color c)
+void WindowRenderer::set_color_at(const size_t idx, const sf::Color c)
 {
 	rectangles.at(idx).setFillColor(c);
 }
@@ -237,9 +245,9 @@ std::vector<sf::RectangleShape> WindowRenderer::get_rectangles() const
 	return rectangles;
 }
 
-void WindowRenderer::create_rectangles(const std::vector<Ushort>& list, const bool with_outline) {
+void WindowRenderer::create_rectangles(const std::vector<size_t>& list, const bool with_outline) {
 	rectangles.clear();
-	for (const Ushort& element : list) {
+	for (const size_t& element : list) {
 
 		sf::RectangleShape shape;
 		float height = to<float>(rectangle_dimensions.height * element);
@@ -256,4 +264,14 @@ void WindowRenderer::create_rectangles(const std::vector<Ushort>& list, const bo
 		}
 		rectangles.emplace_back(shape);
 	}
+}
+
+void WindowRenderer::delete_sounds() noexcept
+{
+	for (int i = 0; i < sounds.size(); ++i) {
+		sounds.front().setVolume(0);
+		sounds.front().stop();
+		sounds.erase(sounds.begin());
+	}
+	sounds.clear();
 }
